@@ -326,6 +326,14 @@ class SheriffGtk(SheriffListener):
             except AttributeError:  # python 2.4, 2.5 don't have Popen.terminate()
                 os.kill(self.spawned_deputy.pid, signal.SIGTERM)
                 self.spawned_deputy.wait()
+
+        # try to kill all child processes as well
+        try:
+            os.killpg(os.getpgid(self.spawned_deputy.pid), signal.SIGKILL)
+            print("killed child processes for local deputy")
+        except:
+            pass
+
         self.spawned_deputy = None
 
     def _check_spawned_deputy(self):
