@@ -567,6 +567,19 @@ class Sheriff:
 
     def __init__(self, nh):
         """Initialize a new Sheriff object"""
+
+        # initialize objects before we start subscribers and worker threads
+        self._exiting = False
+        self._lock = threading.Lock()
+        self._condvar = threading.Condition(self._lock)
+
+        self._deputies = {}
+        self._is_observer = False
+        self._id = platform.node() + ":" + str(os.getpid()) + ":" + str(_now_utime())
+
+        self._listeners = []
+        self._queued_events = []
+
         self.nh = nh
 
         self._prev_can_reach_master = True
@@ -584,10 +597,6 @@ class Sheriff:
         self.discover_pub = self.nh.create_publisher(
             ProcmanDiscovery, "/procman/discover", 10)
 
-        self._deputies = {}
-        self._is_observer = False
-        self._id = platform.node() + ":" + str(os.getpid()) + ":" + str(_now_utime())
-
         # publish a discovery message to query for existing deputies
         discover_msg = ProcmanDiscovery()
         discover_msg.timestamp = self.nh.get_clock().now().to_msg()
@@ -597,18 +606,12 @@ class Sheriff:
 
         # Create a worker thread for periodically publishing orders
         self._worker_thread_obj = threading.Thread(target=self._worker_thread)
-        self._exiting = False
-        self._lock = threading.Lock()
-        self._condvar = threading.Condition(self._lock)
         self._worker_thread_obj.start()
 
         # no roscore in ros2
         # self._master_reach_check_thread = threading.Thread(
         #     target=self._master_reach_check)
         # self._master_reach_check_thread.start()
-
-        self._listeners = []
-        self._queued_events = []
 
     def _get_or_make_deputy(self, deputy_id):
         # _lock should already be acquired
