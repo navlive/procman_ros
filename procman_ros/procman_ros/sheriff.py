@@ -780,7 +780,11 @@ class Sheriff:
         if not command_id:
             raise ValueError("Invalid command id {}".format(command_id))
         if self._get_command(command_id):
-            raise ValueError("Duplicate command id {}".format(command_id))
+            # don't throw for this error.
+            # this can happen if the deputy reports a command before the
+            # sheriff has a chance to add it from config_file.
+            print("WARN: Duplicate command id {}".format(command_id))
+            # raise ValueError("Duplicate command id {}".format(command_id))
         if not deputy_id:
             raise ValueError("Invalid deputy {}".format(deputy_id))
 
